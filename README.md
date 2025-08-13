@@ -1,4 +1,4 @@
-THIS IS A DISCARDED REPO || NOT COMPANY PRIVATE CODE
+THIS IS A DISCARDED REPO || NOT COMPANY'S PRIVATE CODE
 
 ----------------------------------------------------------------------------------
 
