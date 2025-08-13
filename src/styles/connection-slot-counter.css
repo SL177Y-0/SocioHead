@@ -1,0 +1,114 @@
+/* Connection Slot Machine Styles */
+.connection-slot-machine-container {
+  display: inline-flex;
+  overflow: hidden;
+  padding: 4px 2px;
+  margin: 0 auto;
+  letter-spacing: 0.02em;
+  justify-content: center;
+  align-items: flex-end;
+  width: 100%;
+  font-family: 'Space Grotesk', monospace;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  /* Hardware acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: bold;
+  /* Connection style colors */
+  color: #0066ff;
+}
+
+/* Container for each digit reel */
+.connection-reel-container {
+  position: relative;
+  overflow: hidden;
+  height: 1em;
+  min-width: 0.6em;
+  margin: 0 1px;
+  display: inline-block;
+  text-align: center;
+}
+
+/* Actual reel with all 0-9 digits */
+.connection-reel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  transform: translateY(0);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  will-change: transform;
+}
+
+/* Individual digit in the reel */
+.connection-reel-digit {
+  height: 1em;
+  line-height: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Separator characters (commas, decimal points, etc.) */
+.connection-sep-slot {
+  display: inline-block;
+  padding: 0 1px;
+  margin: 0 1px;
+  font-family: 'Space Grotesk', monospace;
+  font-variant-numeric: tabular-nums;
+  position: relative;
+  font-weight: bold;
+}
+
+/* Animation states */
+.connection-reel.spinning {
+  transform: translateY(0);
+  transition-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* Add shine effect during animation */
+.connection-slot-machine-container.animating .connection-reel-container::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -100%;
+  bottom: -100%;
+  background: linear-gradient(to bottom, transparent 30%, rgba(0, 102, 255, 0.15) 50%, transparent 70%);
+  animation: connection-slot-shine 1.5s infinite;
+  pointer-events: none;
+  will-change: transform;
+  z-index: 1;
+}
+
+/* Animation keyframes */
+@keyframes connection-slot-shine {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* Fix for Firefox animation performance */
+@-moz-document url-prefix() {
+  .connection-slot-machine-container, 
+  .connection-reel {
+    transform: translate3d(0,0,0);
+  }
+}
+
+/* Fix for Safari animation */
+@media not all and (min-resolution:.001dpcm) { 
+  @supports (-webkit-appearance:none) {
+    .connection-reel {
+      will-change: transform;
+      transform: translate3d(0,0,0);
+    }
+  }
+} 

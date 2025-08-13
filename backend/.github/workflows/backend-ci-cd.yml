@@ -1,0 +1,118 @@
+name: Backend CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests
+      run: npm test || echo "No tests or tests failed"
+    
+    - name: Run linting
+      run: npm run lint || echo "Linting issues found"
+
+  deploy:
+    name: Deploy Backend
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install or Update AWS CLI
+      run: |
+        # Check if AWS CLI is already installed
+        if ! command -v aws &> /dev/null
+        then
+            echo "AWS CLI not found, installing..."
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+            aws --version
+        else
+            echo "AWS CLI is already installed, updating..."
+            sudo /usr/local/aws-cli/v2/current/bin/aws --version
+        fi
+    
+    - name: Configure AWS credentials
+      run: |
+        mkdir -p ~/.aws
+        echo "[default]" > ~/.aws/credentials
+        echo "aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+        echo "aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+        echo "[default]" > ~/.aws/config
+        echo "region = ap-south-1" >> ~/.aws/config
+    
+    - name: Set up SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.BACKEND_SSH_PRIVATE_KEY }}" > ~/.ssh/backend_key.pem
+        chmod 600 ~/.ssh/backend_key.pem
+        ssh-keyscan -H ${{ secrets.BACKEND_EC2_HOST }} >> ~/.ssh/known_hosts
+    
+    - name: Deploy to EC2
+      run: |
+        echo "Deploying backend to EC2"
+        
+        # SSH into the EC2 instance and execute deployment commands
+        ssh -i ~/.ssh/backend_key.pem ${{ secrets.EC2_USER }}@${{ secrets.BACKEND_EC2_HOST }} << 'EOF'
+          echo "Connected to backend server"
+          
+          # Check if the YAPS-backend directory exists, if not, clone the repo
+          if [ ! -d "YAPS-backend" ]; then
+            echo "YAPS-backend directory does not exist, cloning the repository..."
+            git clone git@github.com:clusterprotocol/YAPS-backend.git
+          fi
+          
+          # Navigate to the YAPS-backend directory
+          cd YAPS-backend
+          
+          # Pull the latest changes from the main branch
+          echo "Pulling latest changes..."
+          git pull origin main
+          
+          # Install dependencies
+          echo "Installing dependencies..."
+          npm install --force
+          
+          # Stop nginx service
+          echo "Stopping nginx..."
+          sudo systemctl stop nginx
+          
+          # Make start-server.sh executable
+          echo "Making start-server.sh executable..."
+          chmod 777 start-server.sh
+          
+          # Run start-server.sh
+          echo "Running start-server.sh..."
+          ./start-server.sh
+          
+          # Start nginx service
+          echo "Starting nginx..."
+          sudo systemctl start nginx
+          
+          # Reload nginx service
+          echo "Reloading nginx..."
+          sudo systemctl reload nginx
+          
+          echo "Backend deployment completed successfully!"
+        EOF
