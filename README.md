@@ -1,4 +1,4 @@
-THIS IS A DISCARDED REPO || NOT COMPANY'S PRIVATE CODE
+THIS IS A DEPRECEATED REPO AND TEARDOWN IDEA || IT IS NOT COMPANY'S PRIVATE CODE
 
 ----------------------------------------------------------------------------------
 
